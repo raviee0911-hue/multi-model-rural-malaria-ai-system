@@ -5,3 +5,5 @@ scikit-learn
 joblib
 Pillow
 opencv-python-headless
+tensorflow-cpu
+h5py
