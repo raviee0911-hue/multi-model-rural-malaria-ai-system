@@ -37,11 +37,11 @@ conn.close()
 # =====================================================
 
 try:
-    model = tf.keras.models.load_model(
-        "malaria_model.h5",
-        compile=False
-    )
-
+    model = load_model(
+    "malaria_model.h5",
+    compile=False
+)
+    
 except Exception as e:
     st.error("❌ Error loading malaria_model.h5")
     st.write(e)
