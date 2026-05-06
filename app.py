@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+from tensorflow import keras
 import sqlite3
 import random
 
@@ -10,11 +11,13 @@ from risk_model import RiskModel
 from fusion_model import final_decision
 
 # -----------------------------
-# Create database tables
+# Create database table
 # -----------------------------
 create_table()
 
-# Create records table if not exists
+# -----------------------------
+# Create records table
+# -----------------------------
 conn = sqlite3.connect("patients.db")
 c = conn.cursor()
 
@@ -35,35 +38,44 @@ conn.close()
 # -----------------------------
 # Load AI Models
 # -----------------------------
-model = tf.keras.models.load_model(
-    "malaria_model.h5",
-    compile=False
-)
+try:
+
+    model = keras.models.load_model(
+        "malaria_model.h5",
+        compile=False,
+        safe_mode=False
+    )
+
+except Exception as e:
+
+    st.error("❌ Error loading malaria_model.h5")
+    st.write(e)
+    st.stop()
 
 risk_model = RiskModel()
 
 # -----------------------------
-# Session State
+# Session state
 # -----------------------------
 if "user" not in st.session_state:
     st.session_state.user = None
 
 # -----------------------------
-# Title
+# App Title
 # -----------------------------
 st.title("🦟 Multi-Model Rural Malaria AI System")
 
 menu = ["Login", "Sign Up"]
 
-# =========================================================
+# =====================================================
 # LOGIN / SIGNUP
-# =========================================================
+# =====================================================
 if st.session_state.user is None:
 
     choice = st.sidebar.selectbox("Menu", menu)
 
     # -----------------------------
-    # SIGN UP
+    # SIGNUP
     # -----------------------------
     if choice == "Sign Up":
 
@@ -79,6 +91,7 @@ if st.session_state.user is None:
 
             if signup(name, age, gender, email, password):
                 st.success("✅ Account Created Successfully")
+
             else:
                 st.error("❌ Email already exists")
 
@@ -98,15 +111,15 @@ if st.session_state.user is None:
 
             if user:
                 st.session_state.user = user
-                st.success("✅ Login successful")
+                st.success("✅ Login Successful")
                 st.rerun()
 
             else:
-                st.error("❌ Invalid credentials")
+                st.error("❌ Invalid Credentials")
 
-# =========================================================
+# =====================================================
 # MAIN SYSTEM
-# =========================================================
+# =====================================================
 else:
 
     st.success(f"Welcome {st.session_state.user[1]}")
@@ -129,9 +142,9 @@ else:
         image = Image.open(uploaded_file).convert("RGB")
         image = image.resize((128, 128))
 
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+        st.image(image, caption="Uploaded Image")
 
-        # Convert image to numpy
+        # Convert to array
         img_array = np.array(image) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
@@ -143,51 +156,61 @@ else:
         if image_prob > 0.5:
             st.error("⚠ Parasitized Detected")
             image_result = "Parasitized"
+
         else:
             st.success("✅ Uninfected")
             image_result = "Uninfected"
 
     # -----------------------------
-    # PATIENT DATA INPUT
+    # PATIENT + WEATHER DATA
     # -----------------------------
-    st.header("📊 Step 2: Patient + Weather Data")
+    st.header("📊 Step 2: Enter Patient + Weather Data")
 
     temperature = st.slider("Temperature (°C)", 15, 45, 30)
+
     rainfall = st.slider("Rainfall (mm)", 0, 300, 100)
+
     humidity = st.slider("Humidity (%)", 0, 100, 70)
-    hemoglobin = st.slider("Hemoglobin Level", 5.0, 18.0, 11.0)
+
+    hemoglobin = st.slider(
+        "Hemoglobin Level",
+        5.0,
+        18.0,
+        11.0
+    )
+
     previous_infection = st.selectbox(
-        "Previous Infection History",
+        "Previous Infection",
         [0, 1]
     )
 
     # -----------------------------
-    # RUN PREDICTION
+    # RUN MULTI MODEL PREDICTION
     # -----------------------------
     if st.button("Run Full Multi-Model Prediction"):
 
         if image_prob is None:
+
             st.warning("⚠ Please upload image first")
 
         else:
 
-            # Risk model input
             risk_input = [
                 temperature,
                 rainfall,
                 humidity,
-                st.session_state.user[2],  # age
+                st.session_state.user[2],
                 hemoglobin,
                 previous_infection,
                 image_prob
             ]
 
-            # Predict probabilities
+            # FIXED RISK PREDICTION
             risk_probs = risk_model.model.predict_proba(
                 risk_model.scaler.transform([risk_input])
             )[0]
 
-            # Final fusion decision
+            # Final fusion
             result = final_decision(image_prob, risk_probs)
 
             # -----------------------------
@@ -211,12 +234,11 @@ else:
             st.write(result["final_status"])
 
             # -----------------------------
-            # SAVE RESULTS
+            # SAVE TO DATABASE
             # -----------------------------
             conn = sqlite3.connect("patients.db")
             c = conn.cursor()
 
-            # Random India coordinates
             lat = random.uniform(8.0, 37.0)
             lon = random.uniform(68.0, 97.0)
 
@@ -238,7 +260,7 @@ else:
             conn.commit()
             conn.close()
 
-            st.success("✅ Prediction saved successfully!")
+            st.success("✅ Prediction Saved Successfully")
 
     # -----------------------------
     # LOGOUT
@@ -247,4 +269,3 @@ else:
 
         st.session_state.user = None
         st.rerun()
-
