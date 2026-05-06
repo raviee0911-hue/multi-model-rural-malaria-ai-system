@@ -1,8 +1,12 @@
 streamlit==1.32.0
-tensorflow-cpu==2.15.0
-scikit-learn==1.4.1.post1
-pandas==2.2.1
+tensorflow==2.15.0
+keras==2.15.0
 numpy==1.26.4
-Pillow==10.2.0
-matplotlib==3.8.3
+pandas==2.2.2
+scikit-learn==1.4.2
+Pillow==10.3.0
+matplotlib==3.8.4
+reportlab==4.2.0
+joblib==1.4.2
 h5py==3.10.0
+protobuf==3.20.3
