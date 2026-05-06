@@ -40,12 +40,7 @@ conn.close()
 # -----------------------------
 try:
 
-    model = keras.models.load_model(
-        "malaria_model.h5",
-        compile=False,
-        safe_mode=False
-    )
-
+model = keras.models.load_model("malaria_model.h5")
 except Exception as e:
 
     st.error("❌ Error loading malaria_model.h5")
