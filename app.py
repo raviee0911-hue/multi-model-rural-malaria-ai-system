@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+from keras.models import load_model
 import sqlite3
 import random
 
